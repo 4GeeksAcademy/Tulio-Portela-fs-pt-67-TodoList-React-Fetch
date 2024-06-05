@@ -5,23 +5,49 @@ const Home = () => {
   const [valorInput, setValorInput] = useState('');
 
   useEffect(() => {
-    const fetchTareas = async () => {
-      try {
-        const response = await fetch('https://playground.4geeks.com/todo/users/TulioPortela');
-        const data = await response.json();
-        if (data.todos && Array.isArray(data.todos)) {
-          setTareas(data.todos);
-        } else {
-          setTareas([]);
-        }
-      } catch (error) {
-        console.error('Error fetching todos:', error);
-        setTareas([]);
+    // Fetch inicial para obter as tarefas
+    fetch('https://playground.4geeks.com/todo/users/TulioPortela', {
+      method: 'GET',
+      headers: {
+        'accept': 'application/json'
       }
-    };
-
-    fetchTareas();
+    })
+    .then(resp => {
+      if (!resp.ok) {
+        
+      }
+      return resp.json();
+    })
+    .then(data => {
+      console.log(data); // Para verificar o formato da resposta no console
+      if (Array.isArray(data.todos)) { 
+        setTareas(data.todos);
+      } else {
+        
+      }
+    })
   }, []);
+
+  const sincronizarTareas = (tareas) => {
+    // Sincronizar tarefas com o servidor
+    fetch('https://playground.4geeks.com/todo/users/TulioPortela', {
+      method: 'PUT',
+      body: JSON.stringify({ name: 'TulioPortela', todos: tareas }), 
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    })
+    .then(resp => {
+      if (!resp.ok) {
+        throw new Error();
+      }
+      return resp.json();
+    })
+    .then(data => {
+      console.log(data);
+    })
+    
+  };
 
   const manejarCambioInput = (e) => {
     setValorInput(e.target.value);
@@ -33,44 +59,30 @@ const Home = () => {
     }
   };
 
-  const agregarTarea = async () => {
+  const agregarTarea = () => {
     if (valorInput !== '') {
-      try {
-        const response = await fetch('https://playground.4geeks.com/todo/users/TulioPortela', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            title: valorInput,
-            done: false,
-          }),
-        });
-        const newTarea = await response.json();
-        setTareas([...tareas, newTarea]);
-        setValorInput('');
-      } catch (error) {
-        console.error('Error adding todo:', error);
-      }
+      const nuevasTareas = [...tareas, { label: valorInput, is_done: false }]; 
+      setTareas(nuevasTareas);
+      setValorInput('');
+      sincronizarTareas(nuevasTareas);
     }
   };
 
-  const manejarEliminarTarea = async (indice) => {
-    const tarea = tareas[indice];
-    try {
-      await fetch(`https://playground.4geeks.com/todo/users/TulioPortela${tarea.id}`, {
-        method: 'DELETE',
-      });
-      const nuevasTareas = tareas.filter((tarea, i) => i !== indice);
-      setTareas(nuevasTareas);
-    } catch (error) {
-      console.error('Error deleting todo:', error);
-    }
+  const manejarEliminarTarea = (indice) => {
+    const nuevasTareas = tareas.filter((_, i) => i !== indice);
+    setTareas(nuevasTareas);
+    sincronizarTareas(nuevasTareas);
+  };
+
+  const limpiarTareas = () => {
+    const nuevasTareas = [];
+    setTareas(nuevasTareas);
+    sincronizarTareas(nuevasTareas);
   };
 
   return (
-    <div className="container d-flex justify-content-center align-items-center" style={{ height: '100vh' }}>
-      <div className="card" style={{ width: '50%' }}>
+    <div className="container d-flex justify-content-center align-items-center vh-100">
+      <div className="card w-50">
         <h2 className="card-header text-center">Lista de Tareas</h2>
         <div className="card-body">
           <div className="input-group mb-3">
@@ -82,60 +94,33 @@ const Home = () => {
               onChange={manejarCambioInput}
               onKeyPress={manejarPresionTecla}
             />
-            <div className="input-group-append">
-              <button
-                className="btn btn-primary"
-                type="button"
-                onClick={agregarTarea}
-              >
-                Agregar
-              </button>
-            </div>
+            <button className="btn btn-primary" onClick={agregarTarea}>
+              Agregar
+            </button>
           </div>
-          {tareas.length === 0 ? (
+          {Array.isArray(tareas) && tareas.length === 0 ? (
             <p className="text-center text-muted">Sin Tareas</p>
           ) : (
             <ul className="list-group mb-3">
-              {tareas.map((tarea, indice) => (
-                <li
-                  key={indice}
-                  className="list-group-item d-flex justify-content-between align-items-center"
-                  onMouseEnter={(e) => {
-                    const botonEliminar = e.currentTarget.querySelector('button');
-                    botonEliminar.style.visibility = 'visible';
-                  }}
-                  onMouseLeave={(e) => {
-                    const botonEliminar = e.currentTarget.querySelector('button');
-                    botonEliminar.style.visibility = 'hidden';
-                  }}
-                >
-                  {tarea.title}
-                  <button
-                    className="btn btn-link ml-2"
-                    style={{
-                      visibility: 'hidden',
-                      padding: '0',
-                      border: 'none',
-                      background: 'none',
-                      textDecoration: 'none',
-                      color: 'inherit',
-                    }}
-                    onClick={() => manejarEliminarTarea(indice)}
-                    onMouseEnter={(e) => (e.currentTarget.style.color = 'gray')}
-                    onMouseLeave={(e) => (e.currentTarget.style.color = 'inherit')}
-                    onMouseDown={(e) => (e.currentTarget.style.color = 'red')}
-                    onMouseUp={(e) => (e.currentTarget.style.color = 'gray')}
-                  >
+              {Array.isArray(tareas) && tareas.map((tarea, indice) => (
+                <li key={indice} className="list-group-item d-flex justify-content-between align-items-center">
+                  {tarea.label}
+                  <button className="btn btn-link" onClick={() => manejarEliminarTarea(indice)}>
                     ✕
                   </button>
                 </li>
               ))}
             </ul>
           )}
-          {tareas.length > 0 && (
+          {Array.isArray(tareas) && tareas.length > 0 && (
             <p className="text-center">
               {tareas.length} {tareas.length === 1 ? 'Tarea' : 'Tareas'}
             </p>
+          )}
+          {Array.isArray(tareas) && tareas.length > 0 && (
+            <button className="btn btn-danger w-100" onClick={limpiarTareas}>
+              Limpiar Todas las Tareas
+            </button>
           )}
         </div>
       </div>
