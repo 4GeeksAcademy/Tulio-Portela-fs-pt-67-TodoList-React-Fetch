@@ -28,6 +28,28 @@ const Home = () => {
     })
   }, []);
 
+  const criarUsuario = () => {
+    fetch('https://playground.4geeks.com/todo/users', {
+      method: 'POST',
+      body: JSON.stringify({ name: 'TulioPortela' }), 
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    })
+    .then(resp => {
+      if (!resp.ok) {
+        throw new Error();
+      }
+      return resp.json();
+    })
+    .then(data => {
+      console.log(data);
+    })
+    .catch(error => {
+      console.error('Erro ao criar usuário:', error);
+    });
+  };
+
   const sincronizarTareas = (tareas) => {
     // Sincronizar tarefas com o servidor
     fetch('https://playground.4geeks.com/todo/users/TulioPortela', {
@@ -46,7 +68,9 @@ const Home = () => {
     .then(data => {
       console.log(data);
     })
-    
+    .catch(error => {
+      console.error('Erro ao sincronizar tarefas:', error);
+    });
   };
 
   const manejarCambioInput = (e) => {
@@ -59,7 +83,7 @@ const Home = () => {
     }
   };
 
-  const agregarTarea = () => {
+  const adicionarTarefa = () => {
     if (valorInput !== '') {
       const nuevasTareas = [...tareas, { label: valorInput, is_done: false }]; 
       setTareas(nuevasTareas);
@@ -74,38 +98,38 @@ const Home = () => {
     sincronizarTareas(nuevasTareas);
   };
 
-  const limpiarTareas = () => {
-    const nuevasTareas = [];
-    setTareas(nuevasTareas);
-    sincronizarTareas(nuevasTareas);
+  const limparTarefas = () => {
+    const novasTarefas = [];
+    setTarefas(novasTarefas);
+    sincronizarTarefas(novasTarefas);
   };
 
   return (
     <div className="container d-flex justify-content-center align-items-center vh-100">
       <div className="card w-50">
-        <h2 className="card-header text-center">Lista de Tareas</h2>
+        <h2 className="card-header text-center">Lista de Tarefas</h2>
         <div className="card-body">
           <div className="input-group mb-3">
             <input
               type="text"
               className="form-control"
-              placeholder="Agregar tarea"
+              placeholder="Adicionar tarefa"
               value={valorInput}
               onChange={manejarCambioInput}
               onKeyPress={manejarPresionTecla}
             />
-            <button className="btn btn-primary" onClick={agregarTarea}>
-              Agregar
+            <button className="btn btn-primary" onClick={adicionarTarefa}>
+              Adicionar
             </button>
           </div>
           {Array.isArray(tareas) && tareas.length === 0 ? (
-            <p className="text-center text-muted">Sin Tareas</p>
+            <p className="text-center text-muted">Sem Tarefas</p>
           ) : (
             <ul className="list-group mb-3">
-              {Array.isArray(tareas) && tareas.map((tarea, indice) => (
+              {Array.isArray(tareas) && tareas.map((tarefa, indice) => (
                 <li key={indice} className="list-group-item d-flex justify-content-between align-items-center">
-                  {tarea.label}
-                  <button className="btn btn-link" onClick={() => manejarEliminarTarea(indice)}>
+                  {tarefa.label}
+                  <button className="btn btn-link" onClick={() => manejarEliminarTarefa(indice)}>
                     ✕
                   </button>
                 </li>
@@ -114,12 +138,12 @@ const Home = () => {
           )}
           {Array.isArray(tareas) && tareas.length > 0 && (
             <p className="text-center">
-              {tareas.length} {tareas.length === 1 ? 'Tarea' : 'Tareas'}
+              {tareas.length} {tareas.length === 1 ? 'Tarefa' : 'Tarefas'}
             </p>
           )}
           {Array.isArray(tareas) && tareas.length > 0 && (
-            <button className="btn btn-danger w-100" onClick={limpiarTareas}>
-              Limpiar Todas las Tareas
+            <button className="btn btn-danger w-100" onClick={limparTarefas}>
+              Limpar Todas as Tarefas
             </button>
           )}
         </div>
